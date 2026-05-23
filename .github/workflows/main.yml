@@ -1,4 +1,4 @@
-name: Build GT Arcade IO Board UF2
+name: Build GT Arcade Kontrol IO Board V0.01
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Install tools
+      - name: Install build tools
         run: |
           sudo apt update
           sudo apt install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3
@@ -24,15 +24,40 @@ jobs:
           cd pico-sdk
           git submodule update --init
 
+      - name: Show repo files
+        run: |
+          echo "Repo dosyalari:"
+          find "$GITHUB_WORKSPACE" -maxdepth 5 -type f
+
+      - name: Find firmware folder
+        run: |
+          echo "Firmware klasoru araniyor..."
+          FIRMWARE_DIR=$(find "$GITHUB_WORKSPACE" -type f -name CMakeLists.txt -path "*/firmware/CMakeLists.txt" -printf "%h\n" | head -n 1)
+
+          if [ -z "$FIRMWARE_DIR" ]; then
+            echo "HATA: firmware/CMakeLists.txt bulunamadi."
+            echo "Lutfen firmware klasorunun icinde CMakeLists.txt oldugunu kontrol et."
+            exit 1
+          fi
+
+          echo "Firmware klasoru bulundu: $FIRMWARE_DIR"
+          echo "FIRMWARE_DIR=$FIRMWARE_DIR" >> $GITHUB_ENV
+
       - name: Build UF2
         run: |
-          mkdir build
-          cd build
-          cmake .. -DPICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk
-          make -j2
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          cmake -S "$FIRMWARE_DIR" -B "$GITHUB_WORKSPACE/build" -DPICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk"
+          cmake --build "$GITHUB_WORKSPACE/build" --parallel 2
 
-      - name: Upload UF2
+      - name: Collect UF2 files
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          find "$GITHUB_WORKSPACE/build" -name "*.uf2" -exec cp {} "$GITHUB_WORKSPACE/out/" \;
+          echo "UF2 dosyalari:"
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Upload UF2 artifacts
         uses: actions/upload-artifact@v4
         with:
           name: gt_arcade_kontrol_io_board_v001_uf2
-          path: build/*.uf2
+          path: out/*.uf2
