@@ -3,7 +3,7 @@ name: Build GT Arcade Kontrol IO Board V0.01
 on:
   workflow_dispatch:
   push:
-    branches: [ "ana", "main", "master" ]
+    branches: [ "main", "master", "ana" ]
 
 permissions:
   contents: read
@@ -21,46 +21,39 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt update
-          sudo apt install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential python3 curl unzip
 
-      - name: Fix git https access
-        run: |
-          git config --global --unset-all http.https://github.com/.extraheader || true
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global advice.detachedHead false
-
-      - name: Download Pico SDK
+      - name: Download Pico SDK as ZIP
         run: |
           cd "$GITHUB_WORKSPACE"
-          git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git
-          cd pico-sdk
-          git submodule update --init --recursive lib/tinyusb
+          curl -L -o pico-sdk.zip https://github.com/raspberrypi/pico-sdk/archive/refs/heads/master.zip
+          unzip pico-sdk.zip
+          mv pico-sdk-master pico-sdk
 
-      - name: Show repo files
+      - name: Download TinyUSB as ZIP
         run: |
-          echo "Repo dosyalari:"
-          find "$GITHUB_WORKSPACE" -maxdepth 5 -type f
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p pico-sdk/lib
+          curl -L -o tinyusb.zip https://github.com/hathach/tinyusb/archive/refs/heads/master.zip
+          unzip tinyusb.zip
+          mv tinyusb-master pico-sdk/lib/tinyusb
 
-      - name: Find firmware folder
+      - name: Show files
         run: |
-          echo "Firmware klasoru araniyor..."
-          FIRMWARE_DIR=$(find "$GITHUB_WORKSPACE" -type f -name CMakeLists.txt -path "*/firmware/CMakeLists.txt" -printf "%h\n" | head -n 1)
+          echo "Ana klasor:"
+          ls -la "$GITHUB_WORKSPACE"
+          echo "SRC:"
+          ls -la "$GITHUB_WORKSPACE/src" || true
+          echo "CMake:"
+          ls -la "$GITHUB_WORKSPACE/CMakeLists.txt" || true
 
-          if [ -z "$FIRMWARE_DIR" ]; then
-            echo "HATA: firmware/CMakeLists.txt bulunamadi."
-            find "$GITHUB_WORKSPACE" -maxdepth 5 -type f
-            exit 1
-          fi
-
-          echo "Firmware klasoru bulundu: $FIRMWARE_DIR"
-          echo "FIRMWARE_DIR=$FIRMWARE_DIR" >> $GITHUB_ENV
+      - name: Configure project
+        run: |
+          cmake -S "$GITHUB_WORKSPACE" -B "$GITHUB_WORKSPACE/build" -DPICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk" -DPICO_BOARD=pico
 
       - name: Build UF2
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/build"
-          cmake -S "$FIRMWARE_DIR" -B "$GITHUB_WORKSPACE/build" -DPICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk"
           cmake --build "$GITHUB_WORKSPACE/build" --parallel 2
 
       - name: Collect UF2 files
@@ -70,7 +63,7 @@ jobs:
           echo "UF2 dosyalari:"
           ls -la "$GITHUB_WORKSPACE/out"
 
-      - name: Upload UF2 artifacts
+      - name: Upload UF2 files
         uses: actions/upload-artifact@v4
         with:
           name: gt_arcade_kontrol_io_board_v001_uf2
