@@ -1,3 +1,4 @@
 @echo off
-py -m pip install -r "%~dp0..\pc_app\requirements.txt"
+cd /d "%~dp0..\pc_app"
+py -m pip install -r requirements.txt
 pause
