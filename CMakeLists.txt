@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
+set(PICO_TINYUSB_PATH ${PICO_SDK_PATH}/lib/tinyusb)
+
 add_executable(gt_arcade_kontrol_io_p1_v001
     src/main.c
     src/usb_descriptors.c
@@ -20,6 +22,8 @@ target_compile_definitions(gt_arcade_kontrol_io_p1_v001 PRIVATE
 
 target_include_directories(gt_arcade_kontrol_io_p1_v001 PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/src
+    ${PICO_TINYUSB_PATH}/src
+    ${PICO_TINYUSB_PATH}/hw
 )
 
 target_link_libraries(gt_arcade_kontrol_io_p1_v001
@@ -46,6 +50,8 @@ target_compile_definitions(gt_arcade_kontrol_io_p2_v001 PRIVATE
 
 target_include_directories(gt_arcade_kontrol_io_p2_v001 PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/src
+    ${PICO_TINYUSB_PATH}/src
+    ${PICO_TINYUSB_PATH}/hw
 )
 
 target_link_libraries(gt_arcade_kontrol_io_p2_v001
