@@ -9,7 +9,17 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-set(PICO_TINYUSB_PATH ${PICO_SDK_PATH}/lib/tinyusb)
+set(TINYUSB_ROOT "${PICO_SDK_PATH}/lib/tinyusb")
+
+message("PICO_SDK_PATH = ${PICO_SDK_PATH}")
+message("TINYUSB_ROOT  = ${TINYUSB_ROOT}")
+
+include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}/src
+    ${TINYUSB_ROOT}/src
+    ${TINYUSB_ROOT}/hw
+    ${TINYUSB_ROOT}/hw/bsp
+)
 
 add_executable(gt_arcade_kontrol_io_p1_v001
     src/main.c
@@ -18,12 +28,6 @@ add_executable(gt_arcade_kontrol_io_p1_v001
 
 target_compile_definitions(gt_arcade_kontrol_io_p1_v001 PRIVATE
     PLAYER_ID=1
-)
-
-target_include_directories(gt_arcade_kontrol_io_p1_v001 PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/src
-    ${PICO_TINYUSB_PATH}/src
-    ${PICO_TINYUSB_PATH}/hw
 )
 
 target_link_libraries(gt_arcade_kontrol_io_p1_v001
@@ -46,12 +50,6 @@ add_executable(gt_arcade_kontrol_io_p2_v001
 
 target_compile_definitions(gt_arcade_kontrol_io_p2_v001 PRIVATE
     PLAYER_ID=2
-)
-
-target_include_directories(gt_arcade_kontrol_io_p2_v001 PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/src
-    ${PICO_TINYUSB_PATH}/src
-    ${PICO_TINYUSB_PATH}/hw
 )
 
 target_link_libraries(gt_arcade_kontrol_io_p2_v001
