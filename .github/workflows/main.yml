@@ -5,6 +5,12 @@ on:
   push:
     branches: [ "ana", "main", "master" ]
 
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,11 +24,19 @@ jobs:
           sudo apt update
           sudo apt install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential git python3
 
+      - name: Fix git https access
+        run: |
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global advice.detachedHead false
+
       - name: Download Pico SDK
         run: |
+          cd "$GITHUB_WORKSPACE"
           git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git
           cd pico-sdk
-          git submodule update --init
+          git submodule update --init --recursive lib/tinyusb
 
       - name: Show repo files
         run: |
@@ -36,7 +50,7 @@ jobs:
 
           if [ -z "$FIRMWARE_DIR" ]; then
             echo "HATA: firmware/CMakeLists.txt bulunamadi."
-            echo "Lutfen firmware klasorunun icinde CMakeLists.txt oldugunu kontrol et."
+            find "$GITHUB_WORKSPACE" -maxdepth 5 -type f
             exit 1
           fi
 
